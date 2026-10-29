@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>تقاطُع</title>
+<style>
+:root{
+  --bg:#f5f0e5; --bg2:#edf3f3;
+  --bg-pattern: rgba(143, 155, 157, 0.15);
+  --bg-pattern-2: rgba(184, 165, 110, 0.1);
+  --card:rgba(255,255,255,.76); --card2:rgba(255,255,255,.55);
+  --button:#8eacb8; --button2:#b8a56e;
+  --text:#242729; --muted:#6e7474;
+  --border:rgba(50,60,60,.12);
+  --cell:#ffffff; --cell-border:#8f9b9d;
+  --selected:#d8e9ee; --wrong:#e4a1a1; --block:#303638;
+  --shadow:0 10px 30px rgba(50,60,60,.10);
+  --vvh: 100vh;
+}
+body.dark{
+  --bg:#1c2229; --bg2:#232b33;
+  --bg-pattern: rgba(255, 255, 255, 0.03);
+  --bg-pattern-2: rgba(255, 255, 255, 0.01);
+  --card:rgba(34,42,50,.92); --card2:rgba(38,47,56,.78);
+  --button:#5a7682; --button2:#7d6f45;
+  --text:#dde3e6; --muted:#8d9aa3;
+  --border:rgba(140,160,175,.12);
+  --cell:#dde3e6; --cell-border:#6a7780;
+  --selected:#5c7a87; --wrong:#a86a6a; --block:#161b20;
+  --shadow:0 10px 30px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  margin:0;height:100%;overflow:hidden;
+  font-family:Tahoma,"Segoe UI",Arial,sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  overscroll-behavior:none;
+}
+button,input,textarea{
+  font-family:inherit;
+  touch-action:manipulation;
+  -webkit-appearance:none;
+  appearance:none;
+}
+button{border:0;cursor:pointer;}
+
+/* --- Main App Background & Home Pattern --- */
+#app{height:100dvh;height:var(--vvh,100vh);position:relative;overflow:hidden;}
+.screen{
+  height:100dvh;height:var(--vvh,100vh);
+  padding:25px 18px 30px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  display:flex;flex-direction:column;position:relative;
+}
+.screen.editor-screen{padding:10px 10px 8px;overflow:hidden;}
+.screen.center-screen{align-items:center;justify-content:center;padding:0;overflow:hidden;}
+
+/* حالة فتح نافذة منبثقة: منع تمرير الصفحة خلفها */
+body.modal-open{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
+
+.screen.home-screen{ background: var(--bg); }
+.screen.home-screen::before {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        linear-gradient(45deg, transparent 46%, var(--bg-pattern) 47% 53%, transparent 54%),
+        linear-gradient(-45deg, transparent 46%, var(--bg-pattern-2) 47% 53%, transparent 54%);
+    background-size: 90px 90px;
+    opacity: 0.6;
+    transform: rotate(2deg);
+}
+.home-content{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%;}
+
+/* Clock - moved to top */
+.clock-container{text-align:center;position:absolute;top:10vh; left:0; right:0; transition: color 0.3s ease;}
+.clock-time{font-size:clamp(70px, 20vw, 110px);font-weight:bold;letter-spacing:2px;font-family:Arial, sans-serif;color:var(--text);line-height:1;}
+
+/* Buttons - pushed down */
+.home-buttons{width:min(330px,92vw);display:flex;flex-direction:column;gap:13px;position:absolute;bottom:8vh;}
+.main-button{width:100%;min-height:57px;border-radius:16px;background:var(--button);color:#101516;font-size:17px;box-shadow:var(--shadow);transition:.2s;}
+.main-button:nth-child(2){background:var(--button2);}
+body.dark .main-button{color:#fff;}
+.main-button:active{transform:scale(.97);}
+.back-button{position:fixed;top:17px;right:17px;width:42px;height:42px;border-radius:50%;background:var(--card);color:var(--text);box-shadow:var(--shadow);font-size:20px;z-index:20;}
+.page-title{text-align:center;font-size:clamp(27px,6vw,38px);font-weight:500;letter-spacing:.5px;margin:5px 0 25px;}
+
+/* Layouts */
+.panel{width:min(900px,96vw);margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);padding:18px;}
+.level-grid{width:min(700px,96vw);margin:10px auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:14px;}
+.level-button{min-height:100px;border-radius:20px;background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow);font-size:24px;}
+.level-button small{display:block;font-size:11px;color:var(--muted);margin-top:8px;}
+.size-layout{width:min(380px,92vw);margin:40px auto 0;display:flex;flex-direction:column;gap:12px;}
+.size-btn{width:100%;min-height:64px;border-radius:20px;background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow);font-size:19px;font-weight:500;display:flex;align-items:center;justify-content:center;transition:.2s;}
+.size-btn:active{transform:scale(.97);background:var(--bg2);}
+
+/* Editor & Player */
+.editor-grid-area{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:4px;}
+.grid-wrapper{max-width:96vw;max-height:100%;overflow:hidden;padding:2px;background:var(--card2);border-radius:14px;}
+.cross-grid{display:grid;gap:1px;width:max-content;margin:auto;background:#798487;border:2px solid #798487;}
+.cell{width:clamp(22px,5.8vw,42px);height:clamp(22px,5.8vw,42px);background:var(--cell);color:#172022;position:relative;display:flex;justify-content:center;align-items:center;font-size:clamp(12px,3vw,22px);font-weight:bold;user-select:none;transition:background 0.08s, transform 0.08s;}
+body.dark .cell{color:#172022;}
+.cell.block{background:var(--block);}
+.cell.selected{background:var(--selected);}
+.cell.word-selected{background:#dcecef;}
+body.dark .cell.word-selected{background:#5c7a87;}
+.cell.wrong{background:var(--wrong)!important;}
+.cell .letter{line-height:1;}
+
+/* Info Bar + Keyboard connected */
+.bottom-section{
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+  margin-top:4px;
+}
+.info-bar{flex:0 0 auto;width:min(850px,96vw);min-height:52px;display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--card);border-radius:16px 16px 0 0;border:1px solid var(--border);border-bottom:none;box-shadow:var(--shadow);overflow:hidden;margin:0 auto;}
+.info-part{display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 10px;font-size:15px;cursor:pointer;transition:background 0.1s;line-height:1.4;}
+.info-part:active{background:var(--card2);}
+.info-block{font-size:24px;cursor:pointer;color:var(--muted);}
+.info-block.active{color:var(--text);background:var(--selected);}
+.info-direction{color:var(--muted);font-weight:bold;}
+.info-question{font-weight:bold;display:flex;align-items:center;justify-content:center;}
+
+/* Keyboard - connected to info bar, now fixed & responsive */
+.keyboard{
+  flex: 0 0 auto;
+  width: min(850px, 96vw);
+  margin: 0 auto;
+  padding: 6px 6px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 18px 18px;
+  box-shadow: var(--shadow);
+}
+.keys { display: flex; flex-direction: column; gap: 6px; }
+.key-row { display: flex; justify-content: center; gap: 6px; width: 100%; }
+.key {
+  flex: 1 1 0;
+  height: 48px;
+  max-width: 60px;
+  border-radius: 8px;
+  background: var(--card2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 0 var(--border);
+  transition: background 0.1s, transform 0.1s;
+}
+.key:active { transform: translateY(2px); box-shadow: none; background: var(--bg2); }
+.key.special { font-size: 20px; font-weight: bold; background: var(--bg2); flex: 0 0 60px; max-width: 60px; }
+.key.special:active { background: var(--border); }
+@media(max-width:500px){
+  .key-row { gap: 4px; }
+  .key { height: 44px; font-size: 16px; }
+  .key.special { flex: 0 0 50px; font-size: 18px; }
+}
+
+/* Notebooks */
+.notebook-grid{width:min(800px,96vw);margin:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px;}
+.notebook{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;position:relative;display:flex;flex-direction:column;aspect-ratio:3/4;}
+.notebook-image{width:100%;height:75%;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.notebook-image img{width:100%;height:100%;object-fit:cover;}
+.notebook-info{padding:8px;text-align:center;background:var(--card);border-top:1px solid var(--border);flex:1;display:flex;flex-direction:column;justify-content:center;}
+.notebook-title{font-weight:bold;font-size:14px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.notebook-count{font-size:11px;color:var(--muted);}
+.notebook-delete{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;z-index:2;}
+
+/* Menus & Modals */
+.menu{position:fixed;z-index:100;min-width:205px;background:var(--card);border:1px solid var(--border);border-radius:17px;box-shadow:0 15px 45px rgba(0,0,0,.18);padding:7px;}
+.menu button{width:100%;text-align:right;padding:12px 13px;border-radius:11px;background:transparent;color:var(--text);font-size:14px;}
+.menu button:hover{background:var(--card2);}
+
+.modal-backdrop{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.4);
+  -webkit-backdrop-filter:blur(2px);
+  backdrop-filter:blur(2px);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  z-index:500;
+  padding:20px;
+  padding-top:max(20px, env(safe-area-inset-top));
+  padding-bottom:max(20px, env(safe-area-inset-bottom));
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  direction:rtl;
+}
+.modal{
+  width:min(430px,94vw);
+  max-height:calc(100dvh - 40px);
+  max-height:calc(var(--vvh,100vh) - 40px);
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:22px;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
+  padding:20px;
+  direction:rtl;
+  text-align:right;
+  margin:auto 0;
+}
+.modal h3{margin:0 0 16px;font-weight:500;text-align:center;}
+
+/* Radio Buttons */
+.choice-list{margin:14px 0;display:flex;flex-direction:column;gap:8px;}
+.choice{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--card2);border-radius:11px;min-height:46px;cursor:pointer;direction:rtl;text-align:right;transition:background .15s, outline .15s;}
+.choice:has(input[type="radio"]:checked){background:var(--selected);outline:2px solid var(--button);}
+.choice input[type="radio"]{width:20px;height:20px;flex:0 0 auto;margin:0;accent-color:var(--button);cursor:pointer;}
+.choice span{flex:1;font-size:14px;}
+
+/* الحقول: حجم خط >= 16px لمنع تكبير iOS التلقائي، resize: none لمنع اضطراب التخطيط */
+.modal textarea,
+.modal input[type="text"],
+.modal input[type="number"]{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg2);
+  color:var(--text);
+  padding:11px;
+  font-size:16px;
+  line-height:1.5;
+  outline:none;
+  resize:none;
+  direction:rtl;
+  text-align:right;
+  touch-action:manipulation;
+  -webkit-user-select:text;
+  user-select:text;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.modal textarea{
+  min-height:90px;
+  max-height:30vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.modal textarea:disabled{opacity:.55;cursor:not-allowed;background:var(--bg);}
+
+.modal input[type="file"]{display:none;}
+.btn-upload{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--bg2);border:1px dashed var(--muted);border-radius:12px;cursor:pointer;color:var(--muted);font-size:13px;margin-bottom:10px;}
+.book-modal-cover{width:120px;height:160px;margin:0 auto 15px;background:var(--bg2);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:40px;}
+.book-modal-cover img{width:100%;height:100%;object-fit:cover;}
+.modal-actions{display:flex;gap:9px;margin-top:17px;}
+.modal-actions button{flex:1;min-height:44px;border-radius:12px;background:var(--button);color:#152022;font-size:14px;font-weight:bold;}
+body.dark .modal-actions button{color:#fff;}
+.modal-actions button.cancel{background:var(--card2);color:var(--text);}
+
+/* Side List */
+.side-list{position:fixed;top:0;left:0;width:min(350px,88vw);height:100dvh;height:var(--vvh,100vh);background:var(--card);box-shadow:10px 0 40px rgba(0,0,0,.18);z-index:400;padding:25px 17px;overflow:auto;-webkit-overflow-scrolling:touch;transform:translateX(-105%);transition:.25s;}
+.side-list.open{transform:translateX(0);}
+.side-list h3{margin-top:5px;font-weight:500;}
+.side-item{padding:12px;border-radius:12px;background:var(--card2);margin:7px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;}
+
+/* Settings & Word List */
+.settings-list{width:min(650px,94vw);margin:auto;display:flex;flex-direction:column;gap:10px;}
+.setting-row{background:var(--card);border:1px solid var(--border);border-radius:16px;min-height:57px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.setting-row button{background:var(--button);color:#182021;padding:9px 14px;border-radius:10px;}
+body.dark .setting-row button{color:white;}
+.setting-row .desc{color:var(--muted);font-size:11px;display:block;margin-top:3px;}
+.word-list{display:flex;flex-direction:column;gap:8px;}
+.word-row{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;align-items:center;background:var(--card2);border-radius:12px;padding:8px;}
+.word-row input{min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);padding:8px;font-size:16px;direction:rtl;text-align:right;-webkit-appearance:none;appearance:none;}
+.word-row button{background:transparent;color:#a75f5f;font-size:18px;}
+
+/* Utils */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#252c2d;color:white;padding:12px 18px;border-radius:13px;opacity:0;pointer-events:none;transition:.25s;z-index:1000;max-width:90vw;text-align:center;font-size:13px;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.empty{text-align:center;color:var(--muted);padding:30px 10px;}
+.footer-note{text-align:center;color:var(--muted);font-size:11px;margin-top:20px;}
+
+/* تحسينات لظهور لوحة المفاتيح */
+body.keyboard-open .modal{max-height:calc(var(--vvh,100vh) - 20px);}
+body.keyboard-open .modal-backdrop{padding-top:10px;padding-bottom:10px;}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   تقاطع — لعبة كلمات متقاطعة محلية (نسخة مُحسّنة v10)
+   إصلاحات التوافق مع iPhone / OpenHTML:
+   - إصلاح الكتابة في حقل السؤال وإزالة القفزات.
+   - تثبيت بطاقة السؤال عند ظهور لوحة المفاتيح.
+   - تحسين استجابة الشبكة للشاشات المختلفة.
+   - دعم visualViewport دون إحداث اهتزاز.
+   - الحفاظ على جميع الوظائف والتخزين المحلي.
+============================================================ */
+
+const STORAGE_KEY = "tqato3_data_v3";
+
+const ARABIC_LETTERS = [
+  "ا","أ","إ","آ","ب","ت","ث","ج","ح","خ","د","ذ","ر","ز",
+  "س","ش","ص","ض","ط","ظ","ع","غ","ف","ق","ك","ل","م","ن",
+  "ه","و","ؤ","ي","ى","ء","ئ","ة"
+];
+
+const KEYBOARD_LAYOUT = [
+  ["ض","ص","ث","ق","ف","غ","ع","ه","خ","ح"],
+  ["ج","ش","س","ي","ب","ل","ا","ت","ن","م"],
+  ["ك","ط","ظ","ذ","د","ر","ز","و","ة","ء"],
+  ["ئ","ؤ","ى","أ","إ","آ","⌫","⋮"]
+];
+
+const DEFAULT_DATA = {
+  theme:"light",
+  levels:[],
+  drafts:[],
+  notebooks:[],
+  nextLevelId:1,
+  nextDraftId:1,
+  nextNotebookId:1,
+  settings:{ autoNext:true, confirmHelp:true }
+};
+
+let DATA = loadData();
+
+let state = {
+  screen:"home",
+  currentLevel:null,
+  currentDraft:null,
+  currentNotebook:null,
+  editor:null,
+  player:null,
+  selectedCell:null,
+  selectedDirection:"across",
+  menu:null
+};
+
+let historyStack = [];
+
+/* ============================================================
+   BASIC STORAGE
+============================================================ */
+function loadData(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw) return structuredClone(DEFAULT_DATA);
+    const data=JSON.parse(raw);
+    if(!data.settings) data.settings = structuredClone(DEFAULT_DATA.settings);
+    return Object.assign(structuredClone(DEFAULT_DATA),data);
+  }catch(e){
+    return structuredClone(DEFAULT_DATA);
+  }
+}
+function saveData(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(DATA)); }
+function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+/* ============================================================
+   THEME
+============================================================ */
+function applyTheme(){ document.body.classList.toggle("dark",DATA.theme==="dark"); }
+function toggleTheme(){
+  DATA.theme=DATA.theme==="dark"?"light":"dark";
+  saveData(); applyTheme(); render();
+}
+
+/* ============================================================
+   MODAL OPEN/CLOSE HELPERS (لمنع قفزات iOS)
+   ============================================================ */
+let _scrollLockY = 0;
+function lockBodyForModal(){
+  _scrollLockY = window.scrollY || window.pageYOffset || 0;
+  document.body.classList.add("modal-open");
+  document.body.style.top = (-_scrollLockY) + "px";
+}
+function unlockBodyFromModal(){
+  if(!document.querySelector(".modal-backdrop")){
+    document.body.classList.remove("modal-open");
+    document.body.style.top = "";
+    try{ window.scrollTo(0, _scrollLockY); }catch(e){}
+  }
+}
+function registerModal(modalEl){
+  modalEl.addEventListener("transitionend", unlockBodyFromModal);
+  // نستخدم MutationObserver لضمان فك القفل عند الإزالة
+  const obs = new MutationObserver(()=>{
+    if(!document.body.contains(modalEl)){
+      obs.disconnect();
+      unlockBodyFromModal();
+    }
+  });
+  obs.observe(document.body, {childList:true, subtree:false});
+  lockBodyForModal();
+}
+function closeAllModals(){
+  document.querySelectorAll(".modal-backdrop").forEach(m=>m.remove());
+  unlockBodyFromModal();
+}
+
+/* ============================================================
+   ROUTING & BACK BUTTON
+============================================================ */
+function navigate(screenName, options = {}) {
+    if (state.screen !== screenName) {
+        historyStack.push({ screen: state.screen, data: options.data || null });
+    }
+    state.screen = screenName;
+    render();
+}
+
+history.pushState({ screen: "home" }, "", "");
+window.addEventListener("popstate", function (e) {
+    if (historyStack.length > 0) {
+        const prev = historyStack.pop();
+        state.screen = prev.screen;
+        render();
+        history.pushState({ screen: state.screen }, "", "");
+    } else {
+        if (state.screen !== "home") {
+            state.screen = "home";
+            render();
+            history.pushState({ screen: "home" }, "", "");
+        } else {
+            history.back();
+        }
+    }
+});
+
+function render(){
+  applyTheme();
+  const app=document.getElementById("app");
+  switch(state.screen){
+    case "home": renderHome(app); break;
+    case "levels": renderLevels(app); break;
+    case "size": renderSize(app); break;
+    case "editor": renderEditor(app); break;
+    case "player": renderPlayer(app); break;
+    case "settings": renderSettings(app); break;
+    case "notebooks": renderNotebooks(app); break;
+    case "notebook": renderNotebook(app); break;
+    default: renderHome(app);
+  }
+}
+
+/* ============================================================
+   HOME
+============================================================ */
+function renderHome(app){
+  app.innerHTML=`
+    <main class="screen center-screen home-screen">
+      <div class="home-content">
+        <div class="clock-container">
+            <div class="clock-time" id="homeClock">00:00</div>
+        </div>
+        <div class="home-buttons">
+          <button class="main-button" onclick="navigate('levels')">ابدأ</button>
+          <button class="main-button" onclick="navigate('size')">إنشاء شبكة</button>
+          <button class="main-button" onclick="navigate('settings')">الإعدادات</button>
+        </div>
+      </div>
+    </main>
+  `;
+  updateClock();
+  if(window.homeClockInterval) clearInterval(window.homeClockInterval);
+  window.homeClockInterval = setInterval(updateClock, 1000);
+}
+
+function updateClock(){
+    const clockEl = document.getElementById("homeClock");
+    if(!clockEl) return;
+    const now = new Date();
+    let h = now.getHours();
+    let m = now.getMinutes();
+    h = h < 10 ? "0" + h : h;
+    m = m < 10 ? "0" + m : m;
+    clockEl.textContent = `${h}:${m}`;
+}
+
+/* ============================================================
+   LEVELS
+============================================================ */
+function renderLevels(app){
+  const levels=DATA.levels;
+  let html="";
+  if(levels.length===0){
+    html=`<div class="empty">لا توجد مراحل بعد.</div>`;
+  }else{
+    html=levels.map((level,index)=>`
+      <button class="level-button" onclick="openLevel(${level.id})">
+        ${String(index+1).padStart(2,"0")}
+        <small>${level.rows} × ${level.cols}</small>
+      </button>
+    `).join("");
+  }
+  app.innerHTML=`
+    <main class="screen">
+      <button class="back-button" onclick="goBack()">‹</button>
+      <h1 class="page-title">المراحل</h1>
+      <div class="level-grid">${html}</div>
+    </main>
+  `;
+}
+
+function openLevel(id){
+  const level=DATA.levels.find(x=>x.id===id);
+  if(!level)return;
+
+  state.currentLevel=id;
+  const saved = level.savedProgress || {};
+  const maxHelps = computeHelpsForLevel(level);
+
+  state.player={
+    levelId:id,
+    answers:clone(saved.answers || level.savedAnswers || {}),
+    selected:null,
+    direction:"across",
+    helps: (typeof saved.helps === "number") ? saved.helps : maxHelps,
+    maxHelps,
+    wrong: {}
+  };
+  navigate('player');
+}
+
+function computeHelpsForLevel(level){
+  const m = Math.min(level.rows, level.cols);
+  if(m >= 15) return 7;
+  if(m >= 12) return 5;
+  if(m >= 9)  return 3;
+  if(m >= 6)  return 2;
+  return 1;
+}
+
+function openDraft(id){
+  const draft=DATA.drafts.find(x=>x.id===id);
+  if(!draft)return;
+  startEditor(draft.rows,draft.cols,draft);
+}
+
+function deleteDraft(id){
+  openConfirmModal("حذف المسودة","هل أنتِ متأكدة من حذف هذه المسودة نهائيًا؟",
+    [
+      { text:"حذف", action:()=>{
+          DATA.drafts=DATA.drafts.filter(x=>x.id!==id);
+          saveData();
+          closeAllModals();
+          openDraftsModal();
+          toast("تم حذف المسودة.");
+      }},
+      { text:"إلغاء", cancel:true }
+    ]);
+}
+
+/* ============================================================
+   SIZE & CUSTOM GRID
+============================================================ */
+function renderSize(app){
+  app.innerHTML=`
+    <main class="screen" style="display:flex;flex-direction:column;align-items:center;">
+      <button class="back-button" onclick="goBack()">‹</button>
+      <h1 class="page-title" style="margin-top:80px;margin-bottom:40px;">إنشاء شبكة</h1>
+      <div class="size-layout">
+        <button class="size-btn" onclick="newEditor(6,6)">6 × 6</button>
+        <button class="size-btn" onclick="newEditor(12,12)">12 × 12</button>
+        <button class="size-btn" onclick="newEditor(15,15)">15 × 15</button>
+        <button class="size-btn" onclick="openCustomSizeModal()">حجم آخر</button>
+        <button class="size-btn" onclick="openDraftsModal()" style="margin-top:10px;">المسودات</button>
+        <button class="size-btn" onclick="navigate('notebooks')" style="margin-top:10px;">دفاتر الكلمات</button>
+      </div>
+    </main>
+  `;
+}
+
+function openCustomSizeModal(){
+  const modal=document.createElement("div");
+  modal.className="modal-backdrop";
+  modal.innerHTML=`
+    <div class="modal">
+      <h3>حجم مخصص (مربع)</h3>
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;margin:20px 0;">
+        <input id="customSize" type="number" min="3" max="15" placeholder="الحجم" style="text-align:center;width:120px;padding:10px;font-size:18px;">
+      </div>
+      <p style="text-align:center; font-size:12px; color:var(--muted); margin-bottom:15px;">يجب أن يكون الرقم بين 3 و15. (سيتم إنشاء شبكة مربعة بنفس الأبعاد)</p>
+      <div class="modal-actions">
+        <button class="cancel" onclick="this.closest('.modal-backdrop').remove()">إلغاء</button>
+        <button onclick="createCustomGrid(this)">إنشاء</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  registerModal(modal);
+}
+
+function createCustomGrid(btn){
+  const modal=btn.closest(".modal-backdrop");
+  const val=parseInt(modal.querySelector("#customSize").value);
+  if(!val || val<3 || val>15){
+    toast("الرجاء إدخال رقم بين 3 و 15."); return;
+  }
+  modal.remove();
+  newEditor(val, val);
+}
+
+function openDraftsModal(){
+  const drafts=DATA.drafts;
+  let content="";
+  if(drafts.length===0){
+    content=`<div class="empty" style="padding:20px;">لا توجد مسودات حالياً.</div>`;
+  }else{
+    content=drafts.map((draft,index)=>`
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="size-btn" style="flex:1;min-height:50px;font-size:16px;"
+          onclick="closeAllModals(); openDraft(${draft.id})">
+          ${String(index+1).padStart(2,"0")} - مسودة ${draft.rows} × ${draft.cols}
+        </button>
+        <button class="size-btn" style="flex:0 0 46px;min-height:50px;font-size:18px;background:var(--wrong);color:#222;"
+          onclick="deleteDraft(${draft.id})" title="حذف المسودة">×</button>
+      </div>
+    `).join("");
+  }
+  const modal=document.createElement("div");
+  modal.className="modal-backdrop";
+  modal.innerHTML=`
+    <div class="modal" style="max-height:70vh;">
+      <h3>المسودات</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;">${content}</div>
+      <div class="modal-actions" style="margin-top:20px;">
+        <button class="cancel" onclick="this.closest('.modal-backdrop').remove()">إغلاق</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  registerModal(modal);
+}
+
+/* ============================================================
+   EDITOR
+============================================================ */
+function newEditor(rows,cols){ startEditor(rows,cols,null); }
+
+function startEditor(rows,cols,existing){
+  if(existing){
+    state.editor=clone(existing);
+  }else{
+    state.editor={
+      id:null, rows, cols,
+      cells:Array.from({length:rows},()=>Array.from({length:cols},()=>({
+        block:false, letter:"", question:"", type:"normal"
+      }))),
+      createdAt:Date.now()
+    };
+  }
+  state.currentDraft=existing?existing.id:null;
+  state.selectedCell=null;
+  state.selectedDirection="across";
+  navigate('editor');
+}
+
+function renderEditor(app){
+  const e=state.editor;
+  app.innerHTML=`
+    <main class="screen editor-screen">
+      <div class="editor-grid-area">
+        <div class="grid-wrapper">
+          <div class="cross-grid" id="editorGrid" style="grid-template-columns:repeat(${e.cols},auto);"></div>
+        </div>
+      </div>
+      <div class="bottom-section">
+        <div class="info-bar">
+          <div class="info-part info-direction" onclick="toggleEditorDirection()">
+            ${state.selectedDirection==="across"?"أفقي":"عمودي"}
+          </div>
+          <div class="info-part info-question" id="editorQuestionInfo" onclick="editorQuestion()">
+            ${getEditorQuestionText()}
+          </div>
+          <div class="info-part info-block ${isEditorSelectedBlock() ? 'active' : ''}" id="editorBlockBtn" onclick="toggleEditorBlock()">
+            ■
+          </div>
+        </div>
+        <div class="keyboard"><div class="keys" id="editorKeys"></div></div>
+      </div>
+    </main>
+    <div id="editorMenuContainer"></div>
+    <div id="sideListContainer"></div>
+  `;
+  buildEditorGrid();
+  buildKeyboard("editorKeys", editorKeyPress);
+}
+
+function isEditorSelectedBlock(){
+  if(!state.editor || !state.selectedCell) return false;
+  return !!state.editor.cells[state.selectedCell.r][state.selectedCell.c].block;
+}
+
+function buildEditorGrid(){
+  const e=state.editor;
+  const grid=document.getElementById("editorGrid");
+  grid.innerHTML="";
+  for(let r=0;r<e.rows;r++){
+    for(let c=0;c<e.cols;c++){
+      const cell=e.cells[r][c];
+      const div=document.createElement("div");
+      div.className="cell";
+      if(cell.block) div.classList.add("block");
+      if(state.selectedCell && state.selectedCell.r===r && state.selectedCell.c===c) div.classList.add("selected");
+      div.dataset.r=r; div.dataset.c=c;
+      if(cell.letter && !cell.block) div.innerHTML=`<span class="letter">${cell.letter}</span>`;
+      div.onclick=()=>selectEditorCell(r,c);
+      grid.appendChild(div);
+    }
+  }
+  requestAnimationFrame(()=>fitEditorGrid());
+}
+
+function fitEditorGrid(){
+  const e=state.editor; if(!e) return;
+  const grid=document.getElementById("editorGrid"); if(!grid) return;
+  const wrapper=grid.parentElement; if(!wrapper) return;
+  const area=wrapper.parentElement; if(!area) return;
+  let availW, availH;
+  try{
+    const rect = area.getBoundingClientRect();
+    availW = rect.width - 20;
+    availH = rect.height - 20;
+  }catch(err){ return; }
+  if(!isFinite(availW) || !isFinite(availH) || availW<=0 || availH<=0) return;
+  const gap=1;
+  const cellFromW=Math.floor((availW-gap*(e.cols-1))/e.cols);
+  const cellFromH=Math.floor((availH-gap*(e.rows-1))/e.rows);
+  let size=Math.min(cellFromW,cellFromH);
+  if(!isFinite(size) || size<=0) return;
+  size=Math.max(8,Math.min(size,60));
+  const fontSize=Math.max(7,Math.floor(size*0.55));
+  grid.querySelectorAll(".cell").forEach(cell=>{
+    cell.style.width=size+"px"; cell.style.height=size+"px"; cell.style.fontSize=fontSize+"px";
+  });
+}
+
+function selectEditorCell(r,c){
+  if(state.selectedCell && state.selectedCell.r===r && state.selectedCell.c===c){
+    state.selectedDirection = state.selectedDirection==="across"?"down":"across";
+    refreshEditorSelectionUI();
+    return;
+  }
+  state.selectedCell={r,c};
+  refreshEditorSelectionUI();
+}
+
+/* ============================================================
+   KEYBOARD BUILDER
+============================================================ */
+function buildKeyboard(id, callback){
+  const container=document.getElementById(id);
+  if(!container)return;
+  container.innerHTML="";
+
+  KEYBOARD_LAYOUT.forEach((row, rowIndex) => {
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "key-row";
+      const isLastRow = rowIndex === KEYBOARD_LAYOUT.length - 1;
+
+      row.forEach(keyStr => {
+          const b=document.createElement("button");
+          b.className="key";
+          b.type="button";
+
+          if(keyStr==="⌫" || keyStr==="⋮"){
+              b.classList.add("special");
+              b.textContent=keyStr;
+              if(keyStr==="⌫") b.onclick=()=>callback("DELETE");
+              else b.onclick=()=>{
+                  if(state.screen==="editor") openEditorMenu();
+                  else if(state.screen==="player") openPlayerMenu();
+              };
+          }else{
+              b.textContent=keyStr;
+              b.onclick=()=>callback(keyStr);
+          }
+          rowDiv.appendChild(b);
+      });
+
+      if (isLastRow) {
+          const specialBtns = rowDiv.querySelectorAll(".key.special");
+          if (specialBtns.length === 2) {
+              const btnDelete = specialBtns[0];
+              const btnMenu = specialBtns[1];
+              rowDiv.insertBefore(btnDelete, rowDiv.firstChild);
+              rowDiv.appendChild(btnMenu);
+          }
+      }
+
+      container.appendChild(rowDiv);
+  });
+}
+
+/* ============================================================
+   EDITOR ACTIONS
+============================================================ */
+function toggleEditorBlock(){
+  if(!state.selectedCell){ toast("اختاري خانة أولًا."); return; }
+  const {r,c}=state.selectedCell;
+  const cell=state.editor.cells[r][c];
+
+  cell.block=!cell.block;
+  if(cell.block){ cell.letter=""; cell.question=""; cell.type="normal"; }
+
+  saveEditorTemp();
+
+  updateEditorCellDOM(r, c);
+  refreshEditorInfoBar();
+  moveEditorNext();
+  refreshEditorSelectionUI();
+}
+
+function updateEditorCellDOM(r, c){
+  const grid=document.getElementById("editorGrid");
+  if(!grid) return;
+  const div=grid.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+  if(!div) return;
+  const cell=state.editor.cells[r][c];
+  div.classList.toggle("block", !!cell.block);
+  if(cell.letter && !cell.block){
+    div.innerHTML=`<span class="letter">${cell.letter}</span>`;
+  }else{
+    div.innerHTML="";
+  }
+}
+
+function refreshEditorInfoBar(){
+  const qInfo=document.getElementById("editorQuestionInfo");
+  if(qInfo) qInfo.textContent=getEditorQuestionText();
+  const blockBtn=document.getElementById("editorBlockBtn");
+  if(blockBtn){
+    if(isEditorSelectedBlock()) blockBtn.classList.add("active");
+    else blockBtn.classList.remove("active");
+  }
+}
+
+function refreshEditorSelectionUI(){
+  const grid=document.getElementById("editorGrid");
+  if(!grid) return;
+  const dirInfo=document.querySelector(".info-direction");
+  if(dirInfo) dirInfo.textContent = state.selectedDirection==="across"?"أفقي":"عمودي";
+  grid.querySelectorAll(".cell").forEach(div=>{
+    const r=parseInt(div.dataset.r);
+    const c=parseInt(div.dataset.c);
+    const isSel = state.selectedCell && state.selectedCell.r===r && state.selectedCell.c===c;
+    div.classList.toggle("selected", isSel);
+  });
+  refreshEditorInfoBar();
+}
+
+function editorKeyPress(key){
+  if(!state.selectedCell){ toast("اختاري خانة أولًا."); return; }
+  const {r,c}=state.selectedCell;
+  const cell=state.editor.cells[r][c];
+
+  if(cell.block) cell.block=false;
+
+  if(key==="DELETE"){
+    cell.letter="";
+    saveEditorTemp();
+    updateEditorCellDOM(r, c);
+    moveEditorPrev();
+    refreshEditorSelectionUI();
+    return;
+  }
+
+  cell.letter=key;
+  saveEditorTemp();
+  updateEditorCellDOM(r, c);
+  moveEditorNext();
+  refreshEditorSelectionUI();
+}
+
+function moveEditorNext(){
+  const {r,c}=state.selectedCell;
+  let nr=r, nc=c;
+  if(state.selectedDirection==="across"){
+    nc++; if(nc>=state.editor.cols){ nc=c; }
+  }else{
+    nr++; if(nr>=state.editor.rows){ nr=r; }
+  }
+  if(nr<state.editor.rows && nc<state.editor.cols){ state.selectedCell={r:nr,c:nc}; }
+}
+
+function moveEditorPrev(){
+  const {r,c}=state.selectedCell;
+  let nr=r, nc=c;
+  if(state.selectedDirection==="across"){
+    nc--; if(nc<0){ nc=c; }
+  }else{
+    nr--; if(nr<0){ nr=r; }
+  }
+  if(nr>=0 && nc>=0){ state.selectedCell={r:nr,c:nc}; }
+}
+
+/* ============================================================
+   EDITOR QUESTION LOGIC
+============================================================ */
+function getEditorQuestionText(){
+  if(!state.selectedCell) return "⋯";
+  const {r,c}=state.selectedCell;
+
+  const word = getWordAtInEditor(r, c, state.selectedDirection);
+  if(!word || word.cells.length < 2) return "⋯";
+
+  const f = word.cells.find(x => x.question);
+  if(!f) return "⋯";
+
+  return buildQuestionDisplay(f.question, f.type, f.wordText);
+}
+
+function buildQuestionDisplay(baseQuestion, type, wordText){
+  let text = baseQuestion || "";
+  if(!type || type === "normal") return text;
+  if(type === "similar") return "أحرف متشابهة";
+  const label = type === "mixed" ? "مبعثرة" : (type === "reverse" ? "معكوسة" : "");
+  if(!label) return text;
+  const suffix = " (" + label + ")";
+  if(text.endsWith(suffix)) return text;
+  return text + suffix;
+}
+
+function editorQuestion(){
+  if(!state.selectedCell){ toast("اختاري خانة أولًا."); return; }
+  const {r,c}=state.selectedCell;
+  const cell=state.editor.cells[r][c];
+  if(cell.block){ toast("الخانة مصمتة."); return; }
+
+  openQuestionModal(r, c, state.selectedDirection);
+}
+
+function openQuestionModal(r, c, direction){
+  const word = getWordAtInEditor(r, c, direction);
+  if(!word || word.cells.length < 2){
+      toast("هذه الخانة لا تنتمي لكلمة (تحتاج حرفين على الأقل).");
+      return;
+  }
+
+  const mainCell = word.cells.find(x => x.question) || word.cells[0];
+  let currentType = "normal";
+  for(const wc of word.cells){
+    if(wc.type && wc.type !== "normal"){ currentType = wc.type; break; }
+  }
+  const baseQuestion = mainCell.question || "";
+
+  const modal=document.createElement("div");
+  modal.className="modal-backdrop";
+  modal.innerHTML=`
+    <div class="modal">
+      <h3>بيانات الكلمة</h3>
+      <textarea id="questionInput" placeholder="اكتبي السؤال هنا..."
+        inputmode="text"
+        enterkeyhint="done"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        dir="rtl"
+        ${currentType==="similar"?"disabled":""}>${escapeHTML(baseQuestion)}</textarea>
+      <div class="choice-list">
+        <label class="choice"><input type="radio" name="wordType" value="normal" ${currentType==="normal"?"checked":""}><span>عادية</span></label>
+        <label class="choice"><input type="radio" name="wordType" value="mixed" ${currentType==="mixed"?"checked":""}><span>مبعثرة</span></label>
+        <label class="choice"><input type="radio" name="wordType" value="reverse" ${currentType==="reverse"?"checked":""}><span>معكوسة</span></label>
+        <label class="choice"><input type="radio" name="wordType" value="similar" ${currentType==="similar"?"checked":""}><span>أحرف متشابهة</span></label>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel" onclick="this.closest('.modal-backdrop').remove()">إلغاء</button>
+        <button onclick="saveQuestionFromModal(this, '${direction}')">حفظ</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  registerModal(modal);
+
+  const radios = modal.querySelectorAll('input[name="wordType"]');
+  const textarea = modal.querySelector("#questionInput");
+
+  radios.forEach(rr => {
+    rr.addEventListener("change", () => {
+      if(rr.value === "similar"){
+        textarea.value = "";
+        textarea.disabled = true;
+        textarea.placeholder = "تعطيل - أحرف متشابهة";
+      } else {
+        textarea.disabled = false;
+        textarea.placeholder = "اكتبي السؤال هنا...";
+      }
+    });
+  });
+}
+
+function saveQuestionFromModal(btn, direction){
+  const modal = btn.closest(".modal-backdrop");
+  const textarea = modal.querySelector("#questionInput");
+  let question = textarea.value.trim();
+  const type = modal.querySelector('input[name="wordType"]:checked').value;
+
+  if(type !== "similar" && !question){
+    toast("اكتب السؤال أولًا."); return;
+  }
+
+  const {r,c} = state.selectedCell;
+  const word = getWordAtInEditor(r, c, direction);
+
+  if(type === "similar"){
+    const letters = word.cells.map(x=>normalizeArabic(x.letter)).filter(Boolean);
+    if(letters.length >= 2 && letters.some(l=>l!==letters[0])){
+      toast("«أحرف متشابهة» تتطلب أن تكون كل حروف الكلمة متطابقة."); return;
+    }
+    if(letters.length < 2){
+      toast("أكملي حروف الكلمة أولًا."); return;
+    }
+  }
+
+  question = question.replace(/\s*\((?:مبعثرة|معكوسة)\)\s*$/, '').trim();
+  if(type === "similar"){
+    question = "";
+  }
+
+  const mainCell = word.cells[0];
+  const target = state.editor.cells[mainCell.r][mainCell.c];
+
+  word.cells.forEach(wc => {
+    const cellObj = state.editor.cells[wc.r][wc.c];
+    if(cellObj !== target){
+      cellObj.question = "";
+      cellObj.type = "normal";
+    }
+  });
+
+  target.question = (type === "similar") ? "" : question;
+  target.type = type;
+
+  saveEditorTemp();
+  modal.remove();
+  refreshEditorInfoBar();
+}
+
+/* ============================================================
+   HELPERS: getWordAtInEditor
+============================================================ */
+function getWordAtInEditor(r,c,direction){
+  const e=state.editor;
+  const cells=[];
+  if(direction==="across"){
+    let start=c; while(start>0 && !e.cells[r][start-1].block) start--;
+    let end=c; while(end<e.cols-1 && !e.cells[r][end+1].block) end++;
+    for(let x=start;x<=end;x++) cells.push({ ...e.cells[r][x], r, c:x });
+  }else{
+    let start=r; while(start>0 && !e.cells[start-1][c].block) start--;
+    let end=r; while(end<e.rows-1 && !e.cells[end+1][c].block) end++;
+    for(let x=start;x<=end;x++) cells.push({ ...e.cells[x][c], r:x, c });
+  }
+  return { cells };
+}
+
+function toggleEditorDirection(){
+  state.selectedDirection = state.selectedDirection==="across"?"down":"across";
+  refreshEditorSelectionUI();
+}
+
+/* ============================================================
+   EDITOR MENU & SIDEBAR
+============================================================ */
+function openEditorMenu(){
+  closeMenus();
+  const container=document.getElementById("editorMenuContainer");
+  if(!container)return;
+  container.innerHTML=`
+    <div class="menu" style="left:15px;bottom:90px;">
+      <button onclick="toggleTheme()">${DATA.theme==="dark"?"تفعيل الوضع الفاتح":"تفعيل الوضع الداكن"}</button>
+      <button onclick="openSideList('across')">الجمل الأفقية</button>
+      <button onclick="openSideList('down')">الجمل العمودية</button>
+      <button onclick="validateAndSaveGrid()">حفظ الشبكة</button>
+      <button onclick="finishEditor()">إنهاء</button>
+    </div>
+  `;
+}
+
+function closeMenus(){ document.querySelectorAll(".menu").forEach(x=>x.remove()); }
+
+function openSideList(direction){
+  closeMenus();
+  state.selectedDirection = direction;
+  const existing=document.getElementById("sideListContainer");
+  existing.innerHTML=`
+    <div class="side-list open">
+      <button style="float:left;background:transparent;color:var(--text);font-size:22px;" onclick="closeSideList()">×</button>
+      <h3>${direction==="across"?"الجمل الأفقية":"الجمل العمودية"}</h3>
+      <div id="sideItems"></div>
+    </div>
+  `;
+  const list=document.getElementById("sideItems");
+  const words=getWordsFromGrid(direction);
+  if(words.length===0){ list.innerHTML=`<div class="empty">لا توجد كلمات.</div>`; return; }
+
+  list.innerHTML=words.map((w,i)=>`
+    <div class="side-item" style="pointer-events:auto;cursor:pointer;" onclick="jumpToWord(${w.start.r},${w.start.c},'${direction}')">
+      <span>${i+1}</span>
+      <span style="letter-spacing:2px;">${escapeHTML(w.question || "بدون سؤال")}</span>
+    </div>
+  `).join("");
+
+  refreshEditorSelectionUI();
+}
+
+function jumpToWord(r, c, direction){
+  state.selectedDirection = direction;
+  state.selectedCell = { r, c };
+  closeSideList();
+  refreshEditorSelectionUI();
+}
+
+function closeSideList(){ const c=document.getElementById("sideListContainer"); if(c) c.innerHTML=""; }
+
+/* ============================================================
+   WORD DETECTION
+============================================================ */
+function getWordsFromGrid(direction){
+  const e=state.editor;
+  const words=[];
+  if(direction==="across"){
+    for(let r=0;r<e.rows;r++){
+      let c=0;
+      while(c<e.cols){
+        while(c<e.cols && e.cells[r][c].block)c++;
+        if(c>=e.cols)break;
+        const start=c;
+        while(c<e.cols && !e.cells[r][c].block)c++;
+        if(c-start>=2){
+          const cells=[];
+          for(let x=start;x<c;x++) cells.push({...e.cells[r][x], r, c:x});
+          words.push({ start:{r,c:start}, cells,
+            text:cells.map(x=>x.letter||"").join(""),
+            question:cells.find(x=>x.question)?.question||"",
+            type:cells.find(x=>x.type && x.type!=="normal")?.type||"normal" });
+        }
+      }
+    }
+  }else{
+    for(let c=0;c<e.cols;c++){
+      let r=0;
+      while(r<e.rows){
+        while(r<e.rows && e.cells[r][c].block)r++;
+        if(r>=e.rows)break;
+        const start=r;
+        while(r<e.rows && !e.cells[r][c].block)r++;
+        if(r-start>=2){
+          const cells=[];
+          for(let x=start;x<r;x++) cells.push({...e.cells[x][c], r:x, c});
+          words.push({ start:{r:start,c}, cells,
+            text:cells.map(x=>x.letter||"").join(""),
+            question:cells.find(x=>x.question)?.question||"",
+            type:cells.find(x=>x.type && x.type!=="normal")?.type||"normal" });
+        }
+      }
+    }
+  }
+  return words;
+}
+
+/* ============================================================
+   SAVE & VALIDATE
+============================================================ */
+function saveEditorTemp(){
+  if(!state.editor)return;
+  let draft=clone(state.editor);
+  if(!draft.id){ draft.id=DATA.nextDraftId++; state.editor.id=draft.id; }
+  const index=DATA.drafts.findIndex(x=>x.id===draft.id);
+  if(index>=0) DATA.drafts[index]=draft;
+  else DATA.drafts.push(draft);
+  saveData();
+}
+
+function validateGrid(){
+  const e=state.editor;
+  const errors=[];
+  const across=getWordsFromGrid("across");
+  const down=getWordsFromGrid("down");
+
+  const checkWord=(w,dir)=>{
+    if(w.cells.length<2) return;
+
+    if(!w.question && w.type!=="similar"){
+      errors.push(`توجد كلمة ${dir==="across"?"أفقية":"عمودية"} في ${dir==="across"?`الصف ${w.start.r+1}`:`العمود ${w.start.c+1}`} دون سؤال.`);
+      return;
+    }
+    const text = w.text;
+    if(text.replace(/\s/g,"").length !== w.cells.length){
+      errors.push(`الكلمة ${dir==="across"?"الأفقية":"العمودية"} في ${dir==="across"?`الصف ${w.start.r+1}`:`العمود ${w.start.c+1}`} تنقصها حروف.`);
+      return;
+    }
+    if(w.type==="similar"){
+      const letters=text.split("").map(normalizeArabic);
+      if(letters.some(l=>l!==letters[0])){
+        errors.push(`الكلمة ${dir==="across"?"الأفقية":"العمودية"} في ${dir==="across"?`الصف ${w.start.r+1}`:`العمود ${w.start.c+1}`} من نوع «أحرف متشابهة» لكن حروفها غير متطابقة.`);
+      }
+    }
+  };
+
+  across.forEach(w=>checkWord(w,"across"));
+  down.forEach(w=>checkWord(w,"down"));
+
+  for(let r=0;r<e.rows;r++){
+    for(let c=0;c<e.cols;c++){
+      if(e.cells[r][c].block)continue;
+      const up=r>0 && !e.cells[r-1][c].block;
+      const down2=r<e.rows-1 && !e.cells[r+1][c].block;
+      const left=c>0 && !e.cells[r][c-1].block;
+      const right=c<e.cols-1 && !e.cells[r][c+1].block;
+      if(!up && !down2 && !left && !right){
+        errors.push(`هناك خانة معزولة عند الصف ${r+1} والعمود ${c+1}.`);
+      }
+    }
+  }
+
+  return errors;
+}
+
+function validateAndSaveGrid(){
+  const errors=validateGrid();
+  if(errors.length){
+    toast(errors.slice(0,3).join(" • "));
+    return;
+  }
+  saveFinalLevel();
+}
+
+function saveFinalLevel(){
+  const e=state.editor;
+  const level={
+    id:DATA.nextLevelId++,
+    rows:e.rows, cols:e.cols,
+    cells:clone(e.cells),
+    savedAnswers:{},
+    savedProgress:{ answers:{}, helps:computeHelpsForLevel(e) },
+    createdAt:Date.now()
+  };
+  DATA.levels.push(level);
+  if(e.id){ DATA.drafts=DATA.drafts.filter(x=>x.id!==e.id); }
+  saveData();
+  toast("تم حفظ الشبكة بنجاح.");
+  setTimeout(()=>{ goBack(); },700);
+}
+
+function finishEditor(){
+  closeMenus();
+  openConfirmModal(
+    "إنهاء إنشاء الشبكة",
+    "هل تريدين حفظها كمسودة للعودة إليها لاحقًا؟",
+    [
+      { text:"حفظ كمسودة", action:()=>{ saveEditorTemp(); goBack(); }},
+      { text:"خروج بدون حفظ", action:()=>{
+          if(state.editor && state.editor.id){
+            DATA.drafts=DATA.drafts.filter(x=>x.id!==state.editor.id);
+            saveData();
+          }
+          goBack();
+      }},
+      { text:"إلغاء", cancel:true }
+    ]
+  );
+}
+
+/* ============================================================
+   PLAYER
+============================================================ */
+function renderPlayer(app){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  if(!level){ navigate('levels'); return; }
+
+  app.innerHTML=`
+    <main class="screen editor-screen">
+      <button class="back-button" onclick="playerExit()">‹</button>
+      <div class="editor-grid-area">
+        <div class="grid-wrapper">
+          <div class="cross-grid" id="playerGrid" style="grid-template-columns:repeat(${level.cols},auto);"></div>
+        </div>
+      </div>
+      <div class="bottom-section">
+        <div class="info-bar">
+          <div class="info-part info-direction" onclick="togglePlayerDirection()">
+            ${state.player.direction==="across"?"أفقي":"عمودي"}
+          </div>
+          <div class="info-part info-question" id="playerQuestion">
+            ${getSelectedPlayerQuestion()}
+          </div>
+          <div class="info-part info-block" style="opacity:0.3; pointer-events:none;">
+            ■
+          </div>
+        </div>
+        <div class="keyboard"><div class="keys" id="playerKeys"></div></div>
+      </div>
+    </main>
+    <div id="playerMenuContainer"></div>
+  `;
+  buildPlayerGrid();
+  buildKeyboard("playerKeys", playerKeyPress);
+}
+
+function togglePlayerDirection(){
+  state.player.direction = state.player.direction==="across"?"down":"across";
+  refreshPlayerDirectionUI();
+}
+
+function refreshPlayerDirectionUI(){
+  const dirInfo=document.querySelector(".info-direction");
+  if(dirInfo) dirInfo.textContent = state.player.direction==="across"?"أفقي":"عمودي";
+  refreshPlayerSelectionUI();
+}
+
+function buildPlayerGrid(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  const grid=document.getElementById("playerGrid");
+  grid.innerHTML="";
+  for(let r=0;r<level.rows;r++){
+    for(let c=0;c<level.cols;c++){
+      const cell=level.cells[r][c];
+      const div=document.createElement("div");
+      div.className="cell";
+      if(cell.block) div.classList.add("block");
+      if(state.player.selected && state.player.selected.r===r && state.player.selected.c===c) div.classList.add("selected");
+      if(isPlayerWordSelected(r,c)) div.classList.add("word-selected");
+      if(state.player.wrong && state.player.wrong[`${r},${c}`]) div.classList.add("wrong");
+      div.dataset.r=r; div.dataset.c=c;
+      if(!cell.block){
+        const value=state.player.answers[`${r},${c}`] || "";
+        div.innerHTML=`<span class="letter">${value}</span>`;
+      }
+      div.onclick=()=>selectPlayerCell(r,c);
+      grid.appendChild(div);
+    }
+  }
+  requestAnimationFrame(()=>fitPlayerGrid());
+}
+
+function fitPlayerGrid(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId); if(!level) return;
+  const grid=document.getElementById("playerGrid"); if(!grid) return;
+  const wrapper=grid.parentElement; if(!wrapper) return;
+  const area=wrapper.parentElement; if(!area) return;
+  let availW, availH;
+  try{
+    const rect = area.getBoundingClientRect();
+    availW = rect.width - 20;
+    availH = rect.height - 20;
+  }catch(err){ return; }
+  if(!isFinite(availW) || !isFinite(availH) || availW<=0 || availH<=0) return;
+  const gap=1;
+  const cellFromW=Math.floor((availW-gap*(level.cols-1))/level.cols);
+  const cellFromH=Math.floor((availH-gap*(level.rows-1))/level.rows);
+  let size=Math.min(cellFromW,cellFromH);
+  if(!isFinite(size) || size<=0) return;
+  size=Math.max(8,Math.min(size,60));
+  const fontSize=Math.max(7,Math.floor(size*0.55));
+  grid.querySelectorAll(".cell").forEach(cell=>{
+    cell.style.width=size+"px"; cell.style.height=size+"px"; cell.style.fontSize=fontSize+"px";
+  });
+}
+
+function selectPlayerCell(r,c){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  const cell=level.cells[r][c];
+  if(cell.block)return;
+  if(state.player.selected && state.player.selected.r===r && state.player.selected.c===c){
+    state.player.direction = state.player.direction==="across"?"down":"across";
+  }
+  state.player.selected={r,c};
+  savePlayerProgress();
+  refreshPlayerSelectionUI();
+}
+
+function refreshPlayerSelectionUI(){
+  const grid=document.getElementById("playerGrid");
+  if(!grid) return;
+  grid.querySelectorAll(".cell").forEach(div=>{
+    const r=parseInt(div.dataset.r);
+    const c=parseInt(div.dataset.c);
+    const isSel = state.player.selected && state.player.selected.r===r && state.player.selected.c===c;
+    div.classList.toggle("selected", isSel);
+    const isWord = isPlayerWordSelected(r,c);
+    div.classList.toggle("word-selected", isWord);
+  });
+  const dirInfo=document.querySelector(".info-direction");
+  if(dirInfo) dirInfo.textContent = state.player.direction==="across"?"أفقي":"عمودي";
+  const qEl=document.getElementById("playerQuestion");
+  if(qEl) qEl.textContent=getSelectedPlayerQuestion();
+}
+
+function isPlayerWordSelected(r,c){
+  if(!state.player.selected)return false;
+  const {r:sr,c:sc}=state.player.selected;
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  if(state.player.direction==="across"){
+    let start=sc; while(start>0 && !level.cells[sr][start-1].block) start--;
+    let end=sc; while(end<level.cols-1 && !level.cells[sr][end+1].block) end++;
+    return r===sr && c>=start && c<=end;
+  }else{
+    let start=sr; while(start>0 && !level.cells[start-1][sc].block) start--;
+    let end=sr; while(end<level.rows-1 && !level.cells[end+1][sc].block) end++;
+    return c===sc && r>=start && r<=end;
+  }
+}
+
+function playerKeyPress(key){
+  if(!state.player.selected){ toast("اختاري خانة أولًا."); return; }
+  const {r,c}=state.player.selected;
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  if(level.cells[r][c].block)return;
+
+  if(key==="DELETE"){ delete state.player.answers[`${r},${c}`]; }
+  else{
+    state.player.answers[`${r},${c}`]=key;
+    if(DATA.settings.autoNext!==false) movePlayerNext();
+  }
+  savePlayerProgress();
+  updatePlayerCellDOM(r,c);
+  refreshPlayerSelectionUI();
+  checkWin();
+}
+
+function updatePlayerCellDOM(r,c){
+  const grid=document.getElementById("playerGrid");
+  if(!grid) return;
+  const div=grid.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+  if(!div) return;
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  if(level.cells[r][c].block){ div.innerHTML=""; return; }
+  const value=state.player.answers[`${r},${c}`] || "";
+  div.innerHTML= value ? `<span class="letter">${value}</span>` : "";
+}
+
+function movePlayerNext(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  let {r,c}=state.player.selected;
+  if(state.player.direction==="across"){
+    c++; while(c<level.cols && level.cells[r][c].block) c++;
+    if(c<level.cols) state.player.selected={r,c};
+  }else{
+    r++; while(r<level.rows && level.cells[r][c].block) r++;
+    if(r<level.rows) state.player.selected={r,c};
+  }
+}
+
+function getSelectedPlayerQuestion(){
+  if(!state.player.selected) return "اختر خلية";
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  const {r,c}=state.player.selected;
+  const word=getWordAtPlayer(level,r,c,state.player.direction);
+  if(!word) return "⋯";
+  const qCell = word.cells.find(x=>x.question);
+  if(!qCell) return "⋯";
+  return buildQuestionDisplay(qCell.question, word.type, word.text);
+}
+
+function getWordAtPlayer(level,r,c,direction){
+  const cells=[];
+  if(direction==="across"){
+    let start=c; while(start>0 && !level.cells[r][start-1].block) start--;
+    let end=c; while(end<level.cols-1 && !level.cells[r][end+1].block) end++;
+    for(let x=start;x<=end;x++) cells.push({ ...level.cells[r][x], r, c:x });
+  }else{
+    let start=r; while(start>0 && !level.cells[start-1][c].block) start--;
+    let end=r; while(end<level.rows-1 && !level.cells[end+1][c].block) end++;
+    for(let x=start;x<=end;x++) cells.push({ ...level.cells[x][c], r:x, c });
+  }
+  return { cells, text:cells.map(x=>x.letter||"").join(""), type: cells.find(c=>c.type && c.type!=="normal")?.type || "normal" };
+}
+
+function savePlayerProgress(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  if(!level)return;
+  level.savedProgress = {
+    answers: clone(state.player.answers),
+    helps: state.player.helps
+  };
+  level.savedAnswers = clone(state.player.answers);
+  saveData();
+}
+
+function checkWin(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  let total=0, correct=0;
+  for(let r=0;r<level.rows;r++){
+    for(let c=0;c<level.cols;c++){
+      const cell=level.cells[r][c];
+      if(cell.block)continue;
+      total++;
+      const answer=state.player.answers[`${r},${c}`] || "";
+      if(normalizeArabic(answer)===normalizeArabic(cell.letter)) correct++;
+      else return;
+    }
+  }
+  if(total>0 && correct===total){
+    openConfirmModal("اكتملت المرحلة","أحسنتِ. تم حل الشبكة كاملة.",
+      [{ text:"إنهاء", action:()=>{
+          level.savedAnswers = {};
+          level.savedProgress = { answers:{}, helps: computeHelpsForLevel(level) };
+          saveData();
+          navigate('levels');
+      }}]);
+  }
+}
+
+function openPlayerMenu(){
+  closeMenus();
+  const container=document.getElementById("playerMenuContainer");
+  if(!container) return;
+  container.innerHTML=`
+    <div class="menu" style="left:15px;bottom:90px;">
+      <button onclick="toggleTheme()">${DATA.theme==="dark"?"تفعيل الوضع الفاتح":"تفعيل الوضع الداكن"}</button>
+      <button onclick="checkSolution()">تحقق من الحل</button>
+      <button onclick="useHelp()">مساعدة</button>
+      <button onclick="playerExit()">خروج</button>
+    </div>
+  `;
+}
+
+function checkSolution(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  let filled=0, total=0;
+  state.player.wrong={};
+  for(let r=0;r<level.rows;r++){
+    for(let c=0;c<level.cols;c++){
+      const cell=level.cells[r][c];
+      if(cell.block)continue;
+      total++;
+      const answer=state.player.answers[`${r},${c}`] || "";
+      if(answer) filled++;
+      if(answer && normalizeArabic(answer)!==normalizeArabic(cell.letter)){
+        state.player.wrong[`${r},${c}`]=true;
+      }
+    }
+  }
+  const percentage = total ? filled/total : 0;
+  if(percentage < 0.05){
+    toast("يمكن التحقق بعد ملء 5٪ على الأقل من الخانات.");
+    state.player.wrong={}; return;
+  }
+  if(Object.keys(state.player.wrong).length===0) toast("لا توجد أخطاء في الخانات المكتوبة.");
+  else toast("تم تحديد الخانات الخاطئة.");
+  updatePlayerGridClasses();
+}
+
+function updatePlayerGridClasses(){
+  const grid=document.getElementById("playerGrid");
+  if(!grid) return;
+  grid.querySelectorAll(".cell").forEach(div=>{
+    const r=parseInt(div.dataset.r);
+    const c=parseInt(div.dataset.c);
+    const isWrong = state.player.wrong && state.player.wrong[`${r},${c}`];
+    div.classList.toggle("wrong", !!isWrong);
+  });
+}
+
+function useHelp(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  if(state.player.helps<=0){ toast("انتهت المساعدات."); return; }
+  if(!state.player.selected){ toast("اختاري خانة أولًا."); return; }
+  if(DATA.settings.confirmHelp){
+    openConfirmModal("استخدام مساعدة","سيتم كشف إجابة الكلمة الحالية.",
+      [{ text:"كشف", action:revealCurrentWord },{ text:"إلغاء", cancel:true }]);
+  }else{
+    revealCurrentWord();
+  }
+}
+
+function revealCurrentWord(){
+  const level=DATA.levels.find(x=>x.id===state.player.levelId);
+  const word=getWordAtPlayer(level, state.player.selected.r, state.player.selected.c, state.player.direction);
+  if(!word)return;
+  state.player.helps--;
+  word.cells.forEach(cell=>{
+    const original = level.cells[cell.r][cell.c];
+    state.player.answers[`${cell.r},${cell.c}`] = original.letter;
+  });
+  savePlayerProgress();
+  word.cells.forEach(cell=>{
+    updatePlayerCellDOM(cell.r, cell.c);
+  });
+  refreshPlayerSelectionUI();
+  checkWin();
+}
+
+function playerExit(){
+  closeMenus();
+  openConfirmModal("الخروج من المرحلة","سيتم الاحتفاظ بالحلول التي كتبتِها.",
+    [{ text:"خروج", action:()=>{
+        savePlayerProgress();
+        navigate('levels');
+    }},{ text:"إلغاء", cancel:true }]);
+}
+
+/* ============================================================
+   SETTINGS
+============================================================ */
+function renderSettings(app){
+  app.innerHTML=`
+    <main class="screen">
+      <button class="back-button" onclick="goBack()">‹</button>
+      <h1 class="page-title">الإعدادات</h1>
+      <div class="settings-list">
+        <div class="setting-row">
+          <div>المظهر<span class="desc">${DATA.theme==="dark"?"الوضع الداكن":"الوضع الفاتح"}</span></div>
+          <button onclick="toggleTheme()">تغيير</button>
+        </div>
+        <div class="setting-row">
+          <div>الانتقال التلقائي<span class="desc">الانتقال للخانة التالية بعد كتابة حرف</span></div>
+          <button onclick="toggleSetting('autoNext')">${DATA.settings.autoNext?"مفعل":"متوقف"}</button>
+        </div>
+        <div class="setting-row">
+          <div>تأكيد المساعدة<span class="desc">السؤال قبل كشف الإجابة</span></div>
+          <button onclick="toggleSetting('confirmHelp')">${DATA.settings.confirmHelp?"مفعل":"متوقف"}</button>
+        </div>
+        <div class="setting-row">
+          <div>نسخة احتياطية<span class="desc">حفظ المراحل والمسودات والدفاتر</span></div>
+          <button onclick="exportBackup()">تصدير</button>
+        </div>
+        <div class="setting-row">
+          <div>استيراد<span class="desc">استعادة نسخة احتياطية</span></div>
+          <button onclick="importBackup()">استيراد</button>
+        </div>
+        <div class="setting-row">
+          <div>دفاتر الكلمات<span class="desc">كلمات وأسئلة جاهزة للأفكار القادمة</span></div>
+          <button onclick="navigate('notebooks')">فتح</button>
+        </div>
+      </div>
+      <div class="footer-note">تقاطع · يعمل محليًا بدون اتصال بالإنترنت</div>
+    </main>
+  `;
+}
+
+function toggleSetting(key){
+  DATA.settings[key]=!DATA.settings[key];
+  saveData(); render();
+}
+
+/* ============================================================
+   BACKUP
+============================================================ */
+function exportBackup(){
+  const backup={ app:"tqato3", version:3, exportedAt:new Date().toISOString(), data:DATA };
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="tqato3-backup.json"; a.click();
+  URL.revokeObjectURL(url);
+  toast("تم إنشاء النسخة الاحتياطية.");
+}
+
+function importBackup(){
+  const input=document.createElement("input");
+  input.type="file"; input.accept=".json,application/json";
+  input.onchange=()=>{
+    const file=input.files[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const backup=JSON.parse(reader.result);
+        if(!backup.data || !Array.isArray(backup.data.levels) || !Array.isArray(backup.data.notebooks))
+          throw new Error("invalid");
+        openConfirmModal("استيراد نسخة احتياطية",
+          "ستُستبدل جميع البيانات الحالية ببيانات النسخة المستوردة. هل تريدين المتابعة؟",
+          [
+            { text:"استيراد", action:()=>{
+                DATA=Object.assign(structuredClone(DEFAULT_DATA), backup.data);
+                saveData(); applyTheme(); render();
+                toast("تم استيراد النسخة الاحتياطية.");
+            }},
+            { text:"إلغاء", cancel:true }
+          ]);
+      }catch(e){ toast("الملف غير صالح."); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/* ============================================================
+   NOTEBOOKS
+============================================================ */
+function renderNotebooks(app){
+  let content="";
+  if(DATA.notebooks.length===0){
+    content=`<div class="empty" style="grid-column: 1 / -1;">لا توجد دفاتر بعد.<br>أنشئي دفترًا لتجميع الكلمات والأسئلة.</div>`;
+  }else{
+    content=DATA.notebooks.map(book=>`
+      <div class="notebook" onclick="openNotebook(${book.id})">
+        <div class="notebook-delete" onclick="event.stopPropagation(); deleteNotebook(${book.id})" title="حذف الدفتر">×</div>
+        <div class="notebook-image">
+            ${book.image ? `<img src="${book.image}" alt="cover">` : "＋"}
+        </div>
+        <div class="notebook-info">
+            <div class="notebook-title">${escapeHTML(book.name)}</div>
+            <div class="notebook-count">${book.words.length} كلمة</div>
+        </div>
+      </div>
+    `).join("");
+  }
+  app.innerHTML=`
+    <main class="screen">
+      <button class="back-button" onclick="goBack()">‹</button>
+      <h1 class="page-title">دفاتر الكلمات</h1>
+      <div style="text-align:center;margin-bottom:20px;">
+        <button class="size-btn" style="width:auto;padding:0 20px;min-height:40px;" onclick="openNotebookModal()">+ دفتر جديد</button>
+      </div>
+      <div class="notebook-grid">${content}</div>
+    </main>
+  `;
+}
+
+function deleteNotebook(id){
+  openConfirmModal("حذف الدفتر","هل أنتِ متأكدة من حذف هذا الدفتر نهائيًا؟",
+    [
+      { text:"حذف", action:()=>{
+          DATA.notebooks=DATA.notebooks.filter(x=>x.id!==id);
+          saveData();
+          render();
+          toast("تم حذف الدفتر.");
+      }},
+      { text:"إلغاء", cancel:true }
+    ]);
+}
+
+function openNotebookModal(book=null){
+  const modal=document.createElement("div");
+  modal.className="modal-backdrop";
+  modal.innerHTML=`
+    <div class="modal">
+      <h3>${book?"تعديل الدفتر":"دفتر جديد"}</h3>
+
+      <div class="book-modal-cover" id="coverPreview">
+        ${book && book.image ? `<img src="${book.image}" id="previewImg">` : "＋"}
+      </div>
+
+      <label class="btn-upload">
+        <input type="file" id="bookImageFile" accept="image/*" onchange="handleImageUpload(event)">
+        📷 اختيار صورة من المعرض
+      </label>
+
+      <input id="bookName" type="text" inputmode="text" autocomplete="off" placeholder="اسم الدفتر" value="${book?escapeHTML(book.name):""}">
+
+      <div class="modal-actions">
+        <button class="cancel" onclick="this.closest('.modal-backdrop').remove()">إلغاء</button>
+        <button onclick="saveNotebookModal(this,${book?book.id:"null"})">حفظ</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  registerModal(modal);
+
+  if(book && book.image){
+      window._tempBookImage = book.image;
+  } else {
+      window._tempBookImage = null;
+  }
+}
+
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        window._tempBookImage = e.target.result;
+        const preview = document.getElementById("coverPreview");
+        preview.innerHTML = `<img src="${window._tempBookImage}">`;
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveNotebookModal(btn,id){
+  const modal=btn.closest(".modal-backdrop");
+  const name=modal.querySelector("#bookName").value.trim();
+  const image=window._tempBookImage || "";
+  if(!name){ toast("اكتبي اسمًا للدفتر."); return; }
+  if(id){
+    const book=DATA.notebooks.find(x=>x.id===id);
+    if(book){ book.name=name; book.image=image; }
+  }else{
+    DATA.notebooks.push({ id:DATA.nextNotebookId++, name, image, words:[] });
+  }
+  saveData(); modal.remove(); render();
+}
+
+function openNotebook(id){
+  const book=DATA.notebooks.find(x=>x.id===id);
+  if(!book)return;
+  state.currentNotebook=id;
+  navigate('notebook');
+}
+
+function renderNotebook(app){
+  const book=DATA.notebooks.find(x=>x.id===state.currentNotebook);
+  if(!book){ navigate('notebooks'); return; }
+  app.innerHTML=`
+    <main class="screen">
+      <button class="back-button" onclick="goBack()">‹</button>
+      <h1 class="page-title">${escapeHTML(book.name)}</h1>
+      <div class="panel">
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap;">
+          <button class="size-btn" style="width:auto;padding:0 20px;min-height:40px;" onclick="addNotebookWord()">+ إضافة كلمة</button>
+          <button class="size-btn" style="width:auto;padding:0 20px;min-height:40px;background:var(--card2);color:var(--text);" onclick='openNotebookModal(${JSON.stringify(book).replace(/'/g, "&#39;")})'>تعديل الدفتر</button>
+        </div>
+        <div class="word-list">
+          ${ book.words.length ? book.words.map((w,i)=>`
+              <div class="word-row">
+                <input type="text" inputmode="text" autocomplete="off" value="${escapeHTML(w.word)}" onchange="updateNotebookWord(${i},'word',this.value)">
+                <input type="text" inputmode="text" autocomplete="off" value="${escapeHTML(w.question||"")}" placeholder="السؤال" onchange="updateNotebookWord(${i},'question',this.value)">
+                <button onclick="deleteNotebookWord(${i})">×</button>
+              </div>
+            `).join("") : `<div class="empty">الدفتر فارغ.</div>` }
+        </div>
+      </div>
+    </main>
+  `;
+}
+
+function addNotebookWord(){
+  const book=DATA.notebooks.find(x=>x.id===state.currentNotebook);
+  if(!book)return;
+  book.words.push({ word:"", question:"" });
+  saveData(); render();
+}
+
+function updateNotebookWord(index,key,value){
+  const book=DATA.notebooks.find(x=>x.id===state.currentNotebook);
+  if(!book)return;
+  book.words[index][key]=value; saveData();
+}
+
+function deleteNotebookWord(index){
+  const book=DATA.notebooks.find(x=>x.id===state.currentNotebook);
+  if(!book)return;
+  book.words.splice(index,1); saveData(); render();
+}
+
+/* ============================================================
+   GENERIC MODAL
+============================================================ */
+function openConfirmModal(title,text,buttons){
+  const modal=document.createElement("div");
+  modal.className="modal-backdrop";
+  modal.innerHTML=`
+    <div class="modal">
+      <h3>${escapeHTML(title)}</h3>
+      <div style="text-align:center;color:var(--muted);line-height:1.8;font-size:14px;">${escapeHTML(text)}</div>
+      <div class="modal-actions" id="confirmButtons"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  registerModal(modal);
+  const container=modal.querySelector("#confirmButtons");
+  buttons.forEach(item=>{
+    const b=document.createElement("button");
+    b.type="button";
+    b.textContent=item.text;
+    if(item.cancel) b.className="cancel";
+    b.onclick=()=>{ modal.remove(); if(item.action) item.action(); };
+    container.appendChild(b);
+  });
+}
+
+/* ============================================================
+   NAVIGATION HELPERS
+============================================================ */
+function goBack(){
+    history.back();
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+let toastTimer;
+function toast(message){
+  const t=document.getElementById("toast");
+  t.textContent=message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ t.classList.remove("show"); },2600);
+}
+
+/* ============================================================
+   UTILS
+============================================================ */
+function normalizeArabic(text){
+  return String(text||"")
+    .replace(/[أإآ]/g,"ا")
+    .replace(/ى/g,"ي")
+    .replace(/ة/g,"ه")
+    .replace(/ؤ/g,"و")
+    .replace(/ئ/g,"ي")
+    .replace(/ـ/g,"")
+    .trim();
+}
+function escapeHTML(str){
+  return String(str||"")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+/* ============================================================
+   KEYBOARD PHYSICAL SUPPORT
+============================================================ */
+document.addEventListener("keydown",e=>{
+  if(state.screen==="player"){
+    if(e.key==="Backspace"){ playerKeyPress("DELETE"); e.preventDefault(); return; }
+    if(ARABIC_LETTERS.includes(e.key)){ playerKeyPress(e.key); e.preventDefault(); }
+  }
+  if(state.screen==="editor"){
+    if(e.key==="Backspace"){ editorKeyPress("DELETE"); e.preventDefault(); return; }
+    if(ARABIC_LETTERS.includes(e.key)){ editorKeyPress(e.key); e.preventDefault(); }
+  }
+});
+
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".menu") && !e.target.closest(".key")){
+    closeMenus();
+  }
+});
+
+/* ============================================================
+   RESIZE & VISUAL VIEWPORT MANAGEMENT
+   ============================================================ */
+let _lastFitSig = "";
+let _fitScheduled = false;
+function scheduleFit(){
+  if(_fitScheduled) return;
+  _fitScheduled = true;
+  requestAnimationFrame(()=>{
+    _fitScheduled = false;
+    let sig = state.screen;
+    if(state.screen==="editor" && state.editor){
+      sig += "|" + state.editor.rows + "x" + state.editor.cols;
+    }
+    if(state.screen==="player" && state.player && state.currentLevel){
+      const lvl = DATA.levels.find(x=>x.id===state.currentLevel);
+      if(lvl) sig += "|" + lvl.rows + "x" + lvl.cols;
+    }
+    if(sig !== _lastFitSig){
+      _lastFitSig = sig;
+      if(state.screen==="editor") fitEditorGrid();
+      if(state.screen==="player") fitPlayerGrid();
+    } else {
+      if(state.screen==="editor") fitEditorGrid();
+      if(state.screen==="player") fitPlayerGrid();
+    }
+  });
+}
+
+window.addEventListener("resize", ()=>{
+  if(state.screen==="editor" || state.screen==="player"){
+    scheduleFit();
+  }
+});
+
+window.addEventListener("orientationchange", ()=>{
+  setTimeout(()=>{
+    if(state.screen==="editor") fitEditorGrid();
+    if(state.screen==="player") fitPlayerGrid();
+  }, 250);
+});
+
+/* visualViewport: يُستخدم فقط لضبط --vvh ولتحديد ظهور لوحة المفاتيح */
+(function setupVisualViewport(){
+  if(!window.visualViewport) return;
+  let rafId = null;
+  let lastVVH = window.visualViewport.height;
+  function update(){
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(()=>{
+      const vv = window.visualViewport;
+      if(!vv) return;
+      const h = vv.height;
+      document.documentElement.style.setProperty("--vvh", h + "px");
+
+      // كشف لوحة المفاتيح: إذا انخفض الارتفاع بشكل كبير فجأة
+      const diff = lastVVH - h;
+      if(diff > 100){
+        document.body.classList.add("keyboard-open");
+      } else if(diff < -50 || h > lastVVH + 50){
+        document.body.classList.remove("keyboard-open");
+      }
+      lastVVH = h;
+    });
+  }
+  window.visualViewport.addEventListener("resize", update);
+  window.visualViewport.addEventListener("scroll", update);
+  update();
+})();
+
+/* ============================================================
+   START
+   ============================================================ */
+applyTheme();
+render();
+</script>
+</body>
+</html>
